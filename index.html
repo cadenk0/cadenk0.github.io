@@ -11,8 +11,8 @@
     --pull-duration: 600ms;
     --expand-duration: 450ms;
     --letter-duration: 240ms;
-    --fade-out-duration: 600ms;
-    --fade-in-duration: 600ms;
+    --collapse-duration: 750ms;
+    --fade-in-duration: 550ms;
   }
   html, body {
     margin: 0;
@@ -49,48 +49,70 @@
     margin: 0;
   }
 
+  /* Holds the intro copy: "Hello" + "I'm Caden". Full-screen and */
+  /* centered at first. Once "I'm Caden" finishes typing in, "Hello" */
+  /* dissolves away (hello-wrap below) and the hero itself shrinks down */
+  /* to a compact header — the combination reads as "I'm Caden" gliding */
+  /* up from the center of the screen to the top of the page, where it */
+  /* settles right above the resume content. */
   .hero {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0 1rem;
-    opacity: 1;
-    transition: opacity var(--fade-out-duration) ease;
+    transition: min-height var(--collapse-duration) cubic-bezier(.22, .8, .25, 1),
+                padding var(--collapse-duration) cubic-bezier(.22, .8, .25, 1);
   }
-  .hero.fade-out {
-    opacity: 0;
-  }
-  .hero.hidden {
-    display: none;
-  }
-
-  .fade-overlay {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 5;
-    transition: opacity var(--fade-out-duration) ease;
-  }
-  .fade-overlay.visible {
-    opacity: 1;
-    transition: opacity var(--fade-out-duration) ease;
-  }
-  .fade-overlay.clearing {
-    opacity: 0;
-    transition: opacity var(--fade-in-duration) ease;
+  .hero.compact {
+    min-height: 22vh;
+    padding-top: 2.75rem;
+    padding-bottom: 1.5rem;
   }
 
+  /* "Hello" gets its own collapsible wrapper so it can shrink to zero */
+  /* height and fade out at the same time the hero collapses — that's */
+  /* what makes "I'm Caden" appear to slide up into its place. */
+  .hello-wrap {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows var(--collapse-duration) cubic-bezier(.22, .8, .25, 1);
+    width: 100%;
+  }
+  .hello-wrap.collapsed {
+    grid-template-rows: 0fr;
+  }
+  .hello-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+  #helloText {
+    opacity: 1;
+    transition: opacity calc(var(--collapse-duration) * 0.6) ease;
+  }
+  .hello-wrap.collapsed #helloText {
+    opacity: 0;
+  }
+
+  /* Vertical stack of hero lines, centered as a block. With "Hello" */
+  /* collapsed away, scaling this down and letting the hero shrink is */
+  /* what turns "I'm Caden" into a compact page header. */
   .stack {
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 0.75rem;
+    transform-origin: top center;
+    transition: transform var(--collapse-duration) cubic-bezier(.22, .8, .25, 1);
+  }
+  .hero.compact .stack {
+    transform: scale(0.6);
   }
 
+  /* The line starts collapsed to zero height, then grows open. The */
+  /* grid-template-rows trick lets us animate from 0 to natural height */
+  /* smoothly, which a plain height/auto transition can't do. */
   .line-wrap {
     display: grid;
     grid-template-rows: 0fr;
@@ -113,6 +135,9 @@
     font-size: clamp(1.6rem, 5.5vw, 2.75rem);
   }
 
+  /* Individual letters fade and rise into place, left to right. Each */
+  /* word is wrapped so the browser only ever breaks lines between */
+  /* words, never in the middle of one. */
   .word {
     display: inline-block;
     white-space: nowrap;
@@ -129,6 +154,9 @@
     transform: translateY(0);
   }
 
+  /* The performer stays put, full-screen and static — it's the page */
+  /* (below) that moves, sliding down from above to cover it, as if */
+  /* your hands are dragging that page down over the video. */
   .performer {
     position: fixed;
     inset: 0;
@@ -139,7 +167,7 @@
     pointer-events: none;
   }
 
-  /* --- Resume-style content, revealed instantly once the hero fades out --- */
+  /* --- Resume-style content, fades in once the hero settles into its compact header --- */
   .content {
     display: none;
     opacity: 0;
@@ -383,7 +411,11 @@
   <div class="page" id="page">
     <div class="hero" id="hero">
       <div class="stack">
-        <h1>Hello</h1>
+        <div class="hello-wrap" id="helloWrap">
+          <div class="hello-inner">
+            <h1 id="helloText">Hello</h1>
+          </div>
+        </div>
         <div class="line-wrap" id="wrap1">
           <div class="line-inner">
             <h2 class="subhead" id="line1"></h2>
@@ -571,20 +603,25 @@
     </div>
   </div>
 
-  <div class="fade-overlay" id="fadeOverlay"></div>
-
   <img
     class="performer"
     id="performer"
-    src="https://media.discordapp.net/attachments/898326558207533107/1544170321194524742/ezgif-8a81a43fa114b95b.gif?ex=6a97882d&is=6a9636ad&hm=a08d5bc61a91c8f993bf0a4f8aa75e0062eb39bc8c5e51889b2ce38d46236d67&"
+    data-src="https://media.discordapp.net/attachments/898326558207533107/1544170321194524742/ezgif-8a81a43fa114b95b.gif?ex=6a97882d&is=6a9636ad&hm=a08d5bc61a91c8f993bf0a4f8aa75e0062eb39bc8c5e51889b2ce38d46236d67&"
     alt=""
   >
 
   <script>
+    (function restartGif() {
+      const performer = document.getElementById('performer');
+      const base = performer.dataset.src;
+      const separator = base.includes('?') ? '&' : '?';
+      performer.src = base + separator + 'cb=' + Date.now();
+    })();
+
     // --- Timing knobs — tune these three to match your gif's real timing ---
     // Time from page load until the "pull" motion begins (i.e. how long
     // your arms stay up before they start coming down).
-    const PULL_START_DELAY = 2370;
+    const PULL_START_DELAY = 2310;
 
     // How long the drop itself takes, in ms — this is the ONLY number
     // controlling drop speed. It's wired directly to the CSS variable
@@ -602,19 +639,19 @@
     document.documentElement.style.setProperty('--expand-duration', EXPAND_DURATION + 'ms');
     document.documentElement.style.setProperty('--letter-duration', LETTER_DURATION + 'ms');
 
-    // --- Hero fade-out + content reveal knobs ---
-    const FADE_PAUSE = 600;          // pause after "I'm Caden" finishes, before the hero starts fading
-    const FADE_OUT_DURATION = 700;   // ms, how long the hero + curtain take to reach solid black
-    const HOLD_BLACK_DURATION = 200; // ms, beat of solid black between hero and content
-    const FADE_IN_DURATION = 700;    // ms, how long the content takes to fade in from black
+    // --- Hero collapse + content reveal knobs ---
+    const COLLAPSE_PAUSE = 500;      // pause after "I'm Caden" finishes, before it glides up
+    const COLLAPSE_DURATION = 750;   // ms, how long Hello takes to dissolve and the hero takes to shrink into a header
+    const CONTENT_PAUSE = 150;       // pause after the header settles, before the resume content starts fading in
+    const FADE_IN_DURATION = 550;    // ms, how long the resume content takes to fade in
 
-    document.documentElement.style.setProperty('--fade-out-duration', FADE_OUT_DURATION + 'ms');
+    document.documentElement.style.setProperty('--collapse-duration', COLLAPSE_DURATION + 'ms');
     document.documentElement.style.setProperty('--fade-in-duration', FADE_IN_DURATION + 'ms');
 
     const LINE1_TEXT = "I'm Caden";
     // This becomes the resume page's lede paragraph — it appears
     // instantly alongside the rest of the content, with no animation.
-    const CONTENT_LEDE_TEXT = "I'm a second year Computer Science and Economics student at Georgetown University interested in software engineering, product management, and business analytics. Outside of school, I love hiking and music production!";
+    const CONTENT_LEDE_TEXT = "I'm a Computer Science and Economics student interested in software engineering, product management, and business analytics.";
 
     document.getElementById('contentLede').textContent = CONTENT_LEDE_TEXT;
 
@@ -664,25 +701,21 @@
       const t1 = PULL_START_DELAY + PULL_DURATION + CONTENT_START_PAUSE;
       setTimeout(() => revealLine('wrap1', 'line1', LINE1_TEXT), t1);
 
-      // Once "I'm Caden" is fully in, pause briefly, then fade the hero
-      // AND a black curtain together — the hero disappearing exactly as
-      // the curtain finishes covering the screen. After a short beat of
-      // solid black, the curtain clears while the resume content fades
-      // in underneath it, so the whole thing reads as one continuous
-      // dissolve through black rather than a hard cut.
-      const t2 = t1 + lineDuration(LINE1_TEXT) + FADE_PAUSE;
+      // Once "I'm Caden" is fully in, pause briefly, then collapse
+      // "Hello" (it shrinks to zero height and fades) while the hero
+      // simultaneously shrinks and scales down — together those two
+      // motions read as "I'm Caden" gliding up from center screen into
+      // a compact header at the top of the page. Once it settles, the
+      // resume content fades in underneath it.
+      const t2 = t1 + lineDuration(LINE1_TEXT) + COLLAPSE_PAUSE;
       setTimeout(() => {
-        document.getElementById('hero').classList.add('fade-out');
-        document.getElementById('fadeOverlay').classList.add('visible');
+        document.getElementById('helloWrap').classList.add('collapsed');
+        document.getElementById('hero').classList.add('compact');
       }, t2);
 
-      const t3 = t2 + FADE_OUT_DURATION + HOLD_BLACK_DURATION;
+      const t3 = t2 + COLLAPSE_DURATION + CONTENT_PAUSE;
       setTimeout(() => {
-        const hero = document.getElementById('hero');
         const content = document.getElementById('content');
-        const overlay = document.getElementById('fadeOverlay');
-
-        hero.classList.add('hidden');
         content.classList.add('visible');
 
         // Force a reflow so the browser registers the content's starting
@@ -690,8 +723,6 @@
         // 'shown' class below would apply instantly with no fade.
         void content.offsetHeight;
 
-        overlay.classList.remove('visible');
-        overlay.classList.add('clearing');
         content.classList.add('shown');
       }, t3);
     });
