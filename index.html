@@ -21,8 +21,6 @@
     background: #000;
   }
 
-  /* The actual site content. Starts hidden above the viewport, */
-  /* then gets "pulled" down into place. */
   .page {
     position: fixed;
     inset: 0;
@@ -137,6 +135,19 @@
     object-fit: cover;
     z-index: 1;
     pointer-events: none;
+  }
+
+  /* On tall phone screens, covering the full viewport height forces a much
+     bigger zoom than covering the width does — and that extra zoom is what
+     pushes the edges of the frame (hands, in this case) outside the crop.
+     Filling slightly less height directly reduces that zoom, which shrinks
+     the horizontal crop by the same proportion. The small gap top and
+     bottom just shows the dark page background underneath. */
+  @media (max-width: 700px) {
+    .performer {
+      top: 10%;
+      height: 80%;
+    }
   }
 
   /* --- Resume-style content, revealed instantly once the hero fades out --- */
@@ -302,7 +313,6 @@
     content: none;
   }
 
-  /* Per-entry "[show details]" toggle for the bullet list */
   .item-details {
     margin-top: 0.4rem;
   }
@@ -355,7 +365,6 @@
     color: rgba(244, 239, 230, 0.55);
   }
 
-  /* --- Plain link lists (professional / personal links) --- */
   .plain-links {
     list-style: none;
     padding: 0;
@@ -369,7 +378,6 @@
     margin-bottom: 0;
   }
 
-  /* --- Placeholder text for sections with nothing filled in yet --- */
   .placeholder {
     margin: 0;
     font-style: italic;
@@ -606,6 +614,7 @@
 
     document.documentElement.style.setProperty('--pull-duration', PULL_DURATION + 'ms');
 
+    // --- Hero copy reveal knobs ---
     const CONTENT_START_PAUSE = 350;  // pause after the pull settles, before "I'm Caden" begins
     const EXPAND_DURATION = 450;      // ms, how long the line takes to open up its space
     const LETTER_DURATION = 240;      // ms, how long each individual letter's fade+rise takes
@@ -614,6 +623,7 @@
     document.documentElement.style.setProperty('--expand-duration', EXPAND_DURATION + 'ms');
     document.documentElement.style.setProperty('--letter-duration', LETTER_DURATION + 'ms');
 
+    // --- Hero fade-out + content reveal knobs ---
     const FADE_PAUSE = 600;          // pause after "I'm Caden" finishes, before the hero starts fading
     const FADE_OUT_DURATION = 700;   // ms, how long the hero + curtain take to reach solid black
     const HOLD_BLACK_DURATION = 200; // ms, beat of solid black between hero and content
@@ -623,6 +633,8 @@
     document.documentElement.style.setProperty('--fade-in-duration', FADE_IN_DURATION + 'ms');
 
     const LINE1_TEXT = "I'm Caden";
+    // This becomes the resume page's lede paragraph — it appears
+    // instantly alongside the rest of the content, with no animation.
     const CONTENT_LEDE_TEXT = "I'm a second year Computer Science and Economics student at Georgetown University interested in software engineering, product management, and business analytics. Outside of school, I love hiking and music production!";
 
     document.getElementById('contentLede').textContent = CONTENT_LEDE_TEXT;
