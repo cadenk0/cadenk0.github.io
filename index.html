@@ -573,19 +573,31 @@
 
   <div class="fade-overlay" id="fadeOverlay"></div>
 
-  <img
+  <video
     class="performer"
     id="performer"
-    data-src="https://media.discordapp.net/attachments/898326558207533107/1544170321194524742/ezgif-8a81a43fa114b95b.gif?ex=6a97882d&is=6a9636ad&hm=a08d5bc61a91c8f993bf0a4f8aa75e0062eb39bc8c5e51889b2ce38d46236d67&"
-    alt=""
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
   >
+    <source src="assets/performer.webm" type="video/webm">
+    <source src="assets/performer.mp4" type="video/mp4">
+  </video>
 
   <script>
-    (function restartGif() {
+    (function restartVideo() {
       const performer = document.getElementById('performer');
-      const base = performer.dataset.src;
-      const separator = base.includes('?') ? '&' : '?';
-      performer.src = base + separator + 'cb=' + Date.now();
+      try {
+        performer.currentTime = 0;
+      } catch (e) {
+      }
+      const playPromise = performer.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {
+        });
+      }
     })();
 
     const PULL_START_DELAY = 2370;
@@ -651,7 +663,7 @@
       return Math.max(EXPAND_DURATION, (letterCount - 1) * LETTER_SPEED + LETTER_DURATION);
     }
 
-    window.addEventListener('load', () => {
+    (function startSequence() {
       setTimeout(() => {
         document.getElementById('page').classList.add('revealed');
       }, PULL_START_DELAY);
@@ -680,7 +692,7 @@
         overlay.classList.add('clearing');
         content.classList.add('shown');
       }, t3);
-    });
+    })();
   </script>
 
 </body>
