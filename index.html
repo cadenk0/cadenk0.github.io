@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hello</title>
+<style>
+  :root {
+    --bg: #171512;
+    --ink: #f4efe6;
+    --pull-duration: 600ms;
+    --expand-duration: 450ms;
+    --letter-duration: 240ms;
+    --fade-out-duration: 600ms;
+    --fade-in-duration: 600ms;
+  }
+  html, body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  /* The actual site content. Starts hidden above the viewport, */
+  /* then gets "pulled" down into place. */
+  .page {
+    position: fixed;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    transform: translateY(-100%);
+    transition: transform var(--pull-duration) cubic-bezier(.22, .8, .25, 1);
+    z-index: 2;
+    border-radius: 0 0 18px 18px;
+    box-shadow:
+      0 40px 60px -12px rgba(0, 0, 0, 0.55),
+      0 14px 20px -8px rgba(0, 0, 0, 0.5);
+  }
+  .page.revealed {
+    transform: translateY(0);
+  }
+  .page h1 {
+    font-size: clamp(3rem, 9vw, 6rem);
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    margin: 0;
+  }
+
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 1rem;
+    opacity: 1;
+    transition: opacity var(--fade-out-duration) ease;
+  }
+  .hero.fade-out {
+    opacity: 0;
+  }
+  .hero.hidden {
+    display: none;
+  }
+
+  .fade-overlay {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 5;
+    transition: opacity var(--fade-out-duration) ease;
+  }
+  .fade-overlay.visible {
+    opacity: 1;
+    transition: opacity var(--fade-out-duration) ease;
+  }
+  .fade-overlay.clearing {
+    opacity: 0;
+    transition: opacity var(--fade-in-duration) ease;
+  }
+
+  .stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.75rem;
+  }
+
+  .line-wrap {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows var(--expand-duration) cubic-bezier(.22, .8, .25, 1);
+    width: 100%;
+  }
+  .line-wrap.expanded {
+    grid-template-rows: 1fr;
+  }
+  .line-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .subhead {
+    margin: 0;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    font-size: clamp(1.6rem, 5.5vw, 2.75rem);
+  }
+
+  .word {
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .letter {
+    display: inline-block;
+    opacity: 0;
+    transform: translateY(0.3em);
+    transition: opacity var(--letter-duration) ease, transform var(--letter-duration) ease;
+    will-change: opacity, transform;
+  }
+  .letter.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .performer {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* --- Resume-style content, revealed instantly once the hero fades out --- */
+  .content {
+    display: none;
+    opacity: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem 5rem;
+    transition: opacity var(--fade-in-duration) ease;
+  }
+  .content.visible {
+    display: block;
+  }
+  .content.shown {
+    opacity: 1;
+  }
+
+  .content-lede {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(1.15rem, 2.6vw, 1.4rem);
+    line-height: 1.5;
+    margin: 0 0 1.25rem;
+  }
+  .content-links-line {
+    margin: 0 0 2.75rem;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+  .content a {
+    color: #e3b873;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .content a:hover {
+    color: #f2cd93;
+  }
+
+  /* --- Top-level dropdown sections (Experience, Projects, etc.) --- */
+  .section-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .section {
+    margin-bottom: 1.5rem;
+  }
+  .section > summary {
+    cursor: pointer;
+    list-style: none;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.2rem;
+    font-weight: 700;
+    padding: 0.15rem 0;
+  }
+  .section > summary::-webkit-details-marker {
+    display: none;
+  }
+  .section > summary::before {
+    content: "▶";
+    display: inline-block;
+    width: 1.1em;
+    font-size: 0.75em;
+  }
+  .section[open] > summary::before {
+    content: "▼";
+  }
+  .section-body {
+    padding-left: 1.5rem;
+    margin-top: 1rem;
+  }
+  .section-note {
+    margin: 0 0 1.5rem;
+    font-size: 0.95rem;
+    color: rgba(244, 239, 230, 0.65);
+  }
+
+  /* --- Categories within a section (Internships, Club Positions...) --- */
+  .category-list {
+    list-style: none;
+    padding-left: 1.1rem;
+    margin: 0;
+  }
+  .category-list > li {
+    position: relative;
+    margin-bottom: 1.75rem;
+  }
+  .category-list > li:last-child {
+    margin-bottom: 0;
+  }
+  .category-list > li::before {
+    content: "•";
+    position: absolute;
+    left: -1.1rem;
+    color: var(--ink);
+  }
+  .category-title {
+    font-weight: 700;
+    font-style: italic;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+  }
+
+  /* --- Individual entries (a job, a project) --- */
+  .entry-list {
+    list-style: none;
+    padding-left: 1.1rem;
+    margin: 0;
+  }
+  .entry-list > li {
+    position: relative;
+    margin-bottom: 1.25rem;
+  }
+  .entry-list > li:last-child {
+    margin-bottom: 0;
+  }
+  .entry-list > li::before {
+    content: "◦";
+    position: absolute;
+    left: -1.1rem;
+    color: rgba(244, 239, 230, 0.55);
+  }
+  .entry-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .entry-title {
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .entry-org {
+    font-style: italic;
+    color: rgba(244, 239, 230, 0.65);
+    font-size: 0.9rem;
+  }
+  .entry-when {
+    font-size: 0.85rem;
+    color: rgba(244, 239, 230, 0.55);
+    white-space: nowrap;
+  }
+  .entry-list strong {
+    color: var(--ink);
+  }
+  .entry-list ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.1rem;
+  }
+  .entry-list li li {
+    margin-bottom: 0.35rem;
+    line-height: 1.5;
+    font-size: 0.92rem;
+    color: rgba(244, 239, 230, 0.85);
+  }
+  .entry-list li li:last-child {
+    margin-bottom: 0;
+  }
+  .entry-list li li::before {
+    content: none;
+  }
+
+  /* Per-entry "[show details]" toggle for the bullet list */
+  .item-details {
+    margin-top: 0.4rem;
+  }
+  .item-details > summary {
+    display: inline-block;
+    font-size: 0.82rem;
+    color: #e3b873;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    list-style: none;
+    cursor: pointer;
+  }
+  .item-details > summary::-webkit-details-marker {
+    display: none;
+  }
+  .item-details > summary::before {
+    content: "[show details]";
+  }
+  .item-details[open] > summary::before {
+    content: "[hide details]";
+  }
+  .item-details > summary:hover {
+    color: #f2cd93;
+  }
+  .item-details img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-top: 0.75rem;
+  }
+
+  .course-list {
+    list-style: none;
+    padding-left: 1.1rem;
+    margin: 0.5rem 0 0;
+  }
+  .course-list li {
+    position: relative;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+  }
+  .course-list li:last-child {
+    margin-bottom: 0;
+  }
+  .course-list li::before {
+    content: "◦";
+    position: absolute;
+    left: -1.1rem;
+    color: rgba(244, 239, 230, 0.55);
+  }
+
+  /* --- Plain link lists (professional / personal links) --- */
+  .plain-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .plain-links li {
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+  }
+  .plain-links li:last-child {
+    margin-bottom: 0;
+  }
+
+  /* --- Placeholder text for sections with nothing filled in yet --- */
+  .placeholder {
+    margin: 0;
+    font-style: italic;
+    font-size: 0.92rem;
+    color: rgba(244, 239, 230, 0.45);
+  }
+</style>
+</head>
+<body>
+
+  <div class="page" id="page">
+    <div class="hero" id="hero">
+      <div class="stack">
+        <h1>Hello</h1>
+        <div class="line-wrap" id="wrap1">
+          <div class="line-inner">
+            <h2 class="subhead" id="line1"></h2>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <p class="content-lede" id="contentLede"></p>
+      <p class="content-links-line">You can get in touch with me <a href="mailto:ck1254@georgetown.edu">here</a>! You can find my resume <a href="#">here</a>.</p>
+
+      <div class="section-list">
+
+        <!-- Experience -->
+        <details class="section" open>
+          <summary>You can read about my experience here:</summary>
+          <div class="section-body">
+            <ul class="category-list">
+
+              <li>
+                <div class="category-title">Internships</div>
+                <ul class="entry-list">
+                  <li>
+                    <div class="entry-head">
+                      <span class="entry-title">Software Engineer — Remindful.ai</span>
+                      <span class="entry-when">May 2026 – Present</span>
+                    </div>
+                    <div class="entry-org">Brooklyn, New York</div>
+                    <details class="item-details">
+                      <summary></summary>
+                      <ul>
+                        <li>Developed key product features that helped secure <strong>over $16K</strong> in NYU startup funding</li>
+                        <li>Architected and shipped an AI-powered mindfulness platform, integrating the Claude API for personalized sessions and intelligent scheduling</li>
+                        <li>Built a cross-platform Flutter app for iOS and Android with responsive UI, animations, and scalable state management</li>
+                      </ul>
+                    </details>
+                  </li>
+
+                  <li>
+                    <div class="entry-head">
+                      <span class="entry-title">Spatial Transcriptomics Research Intern — Mount Sinai Department of Genomic Sciences</span>
+                      <span class="entry-when">Jun 2024 – Jan 2025</span>
+                    </div>
+                    <div class="entry-org">Manhattan, New York</div>
+                    <details class="item-details">
+                      <summary></summary>
+                      <ul>
+                        <li>Developed a Python pipeline to identify <strong>1,500+ gene expression changes</strong> in multidimensional spatial genomic data for colorectal cancer, using Scanpy, Scikit, Pandas, and OpenCV on the Visium HD dataset</li>
+                        <li>Utilized the Minerva supercomputing HPC cluster for high-performance data processing</li>
+                        <li>Co-authored a research paper entered into Regeneron STS and JSHS competitions</li>
+                      </ul>
+                    </details>
+                  </li>
+
+                  <li>
+                    <div class="entry-head">
+                      <span class="entry-title">Data Science &amp; Machine Learning Intern — MD.ai</span>
+                      <span class="entry-when">Jun 2023 – Sep 2023</span>
+                    </div>
+                    <div class="entry-org">Manhattan, New York</div>
+                    <details class="item-details">
+                      <summary></summary>
+                      <ul>
+                        <li>Developed and trained an unconditional image generation model to generate <strong>2,000+ images</strong> using DreamBooth LoRA, TensorFlow, and PyTorch, with tools from Hugging Face and WandB</li>
+                        <li>Wrote <strong>3 Jupyter notebooks</strong> for automatic conversion of DICOM medical imagery into SEG images, extracting metadata into an annotation system compatible with the MD.ai platform</li>
+                        <li>Won a company-wide LLM training and prompt contest, optimizing the ChatGPT 4.0 API for answering advanced medical queries</li>
+                      </ul>
+                    </details>
+                  </li>
+                </ul>
+              </li>
+
+              <li>
+                <div class="category-title">Club Positions</div>
+                <ul class="entry-list">
+                  <li>
+                    <div class="entry-head">
+                      <span class="entry-title">IT Director — Stuyvesant Writing Center</span>
+                      <span class="entry-when">Jun 2023 – Jul 2025</span>
+                    </div>
+                    <div class="entry-org">Manhattan, New York</div>
+                    <details class="item-details">
+                      <summary></summary>
+                      <ul>
+                        <li>Led the redesign and architecture of a website serving <strong>3,000+ students</strong> and <strong>50+ editors</strong> using Flask, React, and PostgreSQL</li>
+                        <li>Built an automated email notification system for editors and editees to streamline scheduling and engagement</li>
+                        <li>Selected, onboarded, and mentored <strong>2 new tech team members</strong>, holding regular meetings to support their transition into IT leadership roles</li>
+                      </ul>
+                    </details>
+                  </li>
+                </ul>
+              </li>
+
+            </ul>
+          </div>
+        </details>
+
+        <!-- Projects -->
+        <details class="section">
+          <summary>You can check out some of my projects here:</summary>
+          <div class="section-body">
+            <ul class="entry-list">
+              <li>
+                <div class="entry-head">
+                  <span class="entry-title">Green Space</span>
+                  <span class="entry-when">Jan 2026 – Present</span>
+                </div>
+                <div class="entry-org">Node.js, TypeScript, React, SQL, Gemini API · <a href="https://github.com/cadenk0/greenspace">GitHub</a></div>
+                <details class="item-details">
+                  <summary></summary>
+                  <ul>
+                    <li>Led end-to-end development of a full-stack social platform, selected out of <strong>100+ submissions</strong> as Environmental Track winner of HoyaHacks 2026</li>
+                    <li>Partnered with the Georgetown Office of Sustainability to deploy a production-grade, user-facing application serving <strong>7,000+ students</strong> campus-wide</li>
+                  </ul>
+                  <img src="https://media.discordapp.net/attachments/898326558207533107/1544194493627113552/image.png?ex=6a979eb1&is=6a964d31&hm=9370342fb4093bbbb1cd298c8337b0a07724ebc0dad3306d95a2a5295d5e7db8&=&format=webp&quality=lossless&width=666&height=768" alt="Green Space screenshot">
+                </details>
+              </li>
+
+              <li>
+                <div class="entry-head">
+                  <span class="entry-title">PocketPal</span>
+                  <span class="entry-when">Mar 2026 – Jun 2026</span>
+                </div>
+                <div class="entry-org">React, TypeScript, Tailwind, Supabase, SQL, ChatGPT API, Scikit-learn · <a href="https://github.com/cadenk0/PocketPal">GitHub</a></div>
+                <details class="item-details">
+                  <summary></summary>
+                  <ul>
+                    <li>Developed an ML pipeline based on <strong>12 biomechanical features</strong> using Random Forest, XGBoost, Logistic Regression, and K-Means clustering to identify gait anomalies</li>
+                    <li>Implemented clinical summaries and alerts using the ChatGPT API to support care teams with real-time patient insights</li>
+                  </ul>
+                  <img src="https://media.discordapp.net/attachments/855554009913098274/1492668030046699550/image.png?ex=6a975fee&is=6a960e6e&hm=defcfaa69eb68ff69a641a0b2ad07b5b7525075a1a87040c3a6db012183663f9&=&format=webp&quality=lossless&width=1024&height=719" alt="PocketPal screenshot">
+                </details>
+              </li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Coursework -->
+        <details class="section">
+          <summary>You can check out my coursework here:</summary>
+          <div class="section-body">
+            <ul class="category-list">
+              <li>
+                <div class="category-title">First Year</div>
+                <ul class="course-list">
+                  <li>Computer Science I</li>
+                  <li>Computer Science II</li>
+                  <li>Multivariable Calculus</li>
+                  <li>Linear Algebra</li>
+                </ul>
+              </li>
+              <li>
+                <div class="category-title">Second Year</div>
+                <ul class="course-list">
+                  <li>Data Structures</li>
+                  <li>Computer Organization</li>
+                  <li>Advanced Programming in Java</li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Professional links -->
+        <details class="section">
+          <summary>You can find some of my professional links here:</summary>
+          <div class="section-body">
+            <ul class="plain-links">
+              <li><a href="https://github.com/cadenk0">GitHub</a></li>
+              <li><a href="https://www.linkedin.com/in/caden-khuu-b55a472b6/">LinkedIn</a></li>
+            </ul>
+          </div>
+        </details>
+
+        <!-- Personal links -->
+        <details class="section">
+          <summary>You can find some of my personal links here:</summary>
+          <div class="section-body">
+            <p class="placeholder">Placeholder — nothing added yet.</p>
+          </div>
+        </details>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="fade-overlay" id="fadeOverlay"></div>
+
+  <img
+    class="performer"
+    id="performer"
+    src="https://media.discordapp.net/attachments/898326558207533107/1544170321194524742/ezgif-8a81a43fa114b95b.gif?ex=6a97882d&is=6a9636ad&hm=a08d5bc61a91c8f993bf0a4f8aa75e0062eb39bc8c5e51889b2ce38d46236d67&"
+    alt=""
+  >
+
+  <script>
+    // --- Timing knobs — tune these three to match your gif's real timing ---
+    // Time from page load until the "pull" motion begins (i.e. how long
+    // your arms stay up before they start coming down).
+    const PULL_START_DELAY = 2370;
+
+    // How long the drop itself takes, in ms — this is the ONLY number
+    // controlling drop speed. It's wired directly to the CSS variable
+    // --pull-duration below, so there's nothing else to keep in sync.
+    const PULL_DURATION = 700;
+
+    document.documentElement.style.setProperty('--pull-duration', PULL_DURATION + 'ms');
+
+    // --- Hero copy reveal knobs ---
+    const CONTENT_START_PAUSE = 350;  // pause after the pull settles, before "I'm Caden" begins
+    const EXPAND_DURATION = 450;      // ms, how long the line takes to open up its space
+    const LETTER_DURATION = 240;      // ms, how long each individual letter's fade+rise takes
+    const LETTER_SPEED = 16;          // ms between successive letters starting — lower = faster sweep
+
+    document.documentElement.style.setProperty('--expand-duration', EXPAND_DURATION + 'ms');
+    document.documentElement.style.setProperty('--letter-duration', LETTER_DURATION + 'ms');
+
+    // --- Hero fade-out + content reveal knobs ---
+    const FADE_PAUSE = 600;          // pause after "I'm Caden" finishes, before the hero starts fading
+    const FADE_OUT_DURATION = 700;   // ms, how long the hero + curtain take to reach solid black
+    const HOLD_BLACK_DURATION = 200; // ms, beat of solid black between hero and content
+    const FADE_IN_DURATION = 700;    // ms, how long the content takes to fade in from black
+
+    document.documentElement.style.setProperty('--fade-out-duration', FADE_OUT_DURATION + 'ms');
+    document.documentElement.style.setProperty('--fade-in-duration', FADE_IN_DURATION + 'ms');
+
+    const LINE1_TEXT = "I'm Caden";
+    // This becomes the resume page's lede paragraph — it appears
+    // instantly alongside the rest of the content, with no animation.
+    const CONTENT_LEDE_TEXT = "I'm a second year Computer Science and Economics student at Georgetown University interested in software engineering, product management, and business analytics. Outside of school, I love hiking and music production!";
+
+    document.getElementById('contentLede').textContent = CONTENT_LEDE_TEXT;
+
+    function buildLetters(el, text) {
+      el.innerHTML = '';
+      const spans = [];
+      const words = text.split(' ');
+      words.forEach((word, wi) => {
+        const wordSpan = document.createElement('span');
+        wordSpan.className = 'word';
+        for (const ch of word) {
+          const span = document.createElement('span');
+          span.className = 'letter';
+          span.textContent = ch;
+          wordSpan.appendChild(span);
+          spans.push(span);
+        }
+        el.appendChild(wordSpan);
+        if (wi < words.length - 1) {
+          el.appendChild(document.createTextNode(' '));
+        }
+      });
+      return spans;
+    }
+
+    function revealLine(wrapId, lineId, text) {
+      const wrap = document.getElementById(wrapId);
+      const spans = buildLetters(document.getElementById(lineId), text);
+      wrap.classList.add('expanded');
+      spans.forEach((span, i) => {
+        setTimeout(() => span.classList.add('show'), i * LETTER_SPEED);
+      });
+    }
+
+    function lineDuration(text) {
+      const letterCount = text.replace(/ /g, '').length;
+      return Math.max(EXPAND_DURATION, (letterCount - 1) * LETTER_SPEED + LETTER_DURATION);
+    }
+
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        // The page slides down from above, covering the gif underneath —
+        // like it's the thing physically being dragged down over it.
+        document.getElementById('page').classList.add('revealed');
+      }, PULL_START_DELAY);
+
+      const t1 = PULL_START_DELAY + PULL_DURATION + CONTENT_START_PAUSE;
+      setTimeout(() => revealLine('wrap1', 'line1', LINE1_TEXT), t1);
+
+      // Once "I'm Caden" is fully in, pause briefly, then fade the hero
+      // AND a black curtain together — the hero disappearing exactly as
+      // the curtain finishes covering the screen. After a short beat of
+      // solid black, the curtain clears while the resume content fades
+      // in underneath it, so the whole thing reads as one continuous
+      // dissolve through black rather than a hard cut.
+      const t2 = t1 + lineDuration(LINE1_TEXT) + FADE_PAUSE;
+      setTimeout(() => {
+        document.getElementById('hero').classList.add('fade-out');
+        document.getElementById('fadeOverlay').classList.add('visible');
+      }, t2);
+
+      const t3 = t2 + FADE_OUT_DURATION + HOLD_BLACK_DURATION;
+      setTimeout(() => {
+        const hero = document.getElementById('hero');
+        const content = document.getElementById('content');
+        const overlay = document.getElementById('fadeOverlay');
+
+        hero.classList.add('hidden');
+        content.classList.add('visible');
+
+        // Force a reflow so the browser registers the content's starting
+        // (opacity: 0) state before we transition it — otherwise the
+        // 'shown' class below would apply instantly with no fade.
+        void content.offsetHeight;
+
+        overlay.classList.remove('visible');
+        overlay.classList.add('clearing');
+        content.classList.add('shown');
+      }, t3);
+    });
+  </script>
+
+</body>
+</html>
