@@ -11,8 +11,8 @@
     --pull-duration: 600ms;
     --expand-duration: 450ms;
     --letter-duration: 240ms;
-    --fade-out-duration: 600ms;
-    --fade-in-duration: 600ms;
+    --collapse-duration: 750ms;
+    --fade-in-duration: 550ms;
   }
   html, body {
     margin: 0;
@@ -52,41 +52,37 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 1rem;
-    opacity: 1;
-    transition: opacity var(--fade-out-duration) ease;
+    transition: min-height var(--collapse-duration) cubic-bezier(.22, .8, .25, 1),
+                padding var(--collapse-duration) cubic-bezier(.22, .8, .25, 1);
   }
-  .hero.fade-out {
-    opacity: 0;
-  }
-  .hero.hidden {
-    display: none;
+  .hero.compact {
+    min-height: 6vh;
+    padding-top: 1.25rem;
+    padding-bottom: 0.25rem;
   }
 
-  .fade-overlay {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 5;
-    transition: opacity var(--fade-out-duration) ease;
-  }
-  .fade-overlay.visible {
-    opacity: 1;
-    transition: opacity var(--fade-out-duration) ease;
-  }
-  .fade-overlay.clearing {
-    opacity: 0;
-    transition: opacity var(--fade-in-duration) ease;
+  .hero-inner {
+    width: 100%;
+    max-width: 46rem;
+    margin: 0 auto;
+    padding: 0 1.5rem;
   }
 
   .stack {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    text-align: center;
+    align-items: flex-start;
+    text-align: left;
     gap: 0.75rem;
+    width: max-content;
+    max-width: 100%;
+    margin: 0 auto;
+    transform-origin: 0 0;
+    transition: transform var(--collapse-duration) cubic-bezier(.22, .8, .25, 1);
+  }
+  .hero.compact .stack {
+    margin: 0;
+    transform: scale(0.9);
   }
 
   .line-wrap {
@@ -137,12 +133,6 @@
     pointer-events: none;
   }
 
-  /* On tall phone screens, covering the full viewport height forces a much
-     bigger zoom than covering the width does — and that extra zoom is what
-     pushes the edges of the frame (hands, in this case) outside the crop.
-     Filling slightly less height directly reduces that zoom, which shrinks
-     the horizontal crop by the same proportion. The small gap top and
-     bottom just shows the dark page background underneath. */
   @media (max-width: 700px) {
     .performer {
       top: 10%;
@@ -150,14 +140,13 @@
     }
   }
 
-  /* --- Resume-style content, revealed instantly once the hero fades out --- */
   .content {
     display: none;
     opacity: 0;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     max-width: 46rem;
     margin: 0 auto;
-    padding: 3.5rem 1.5rem 5rem;
+    padding: 0.5rem 1.5rem 5rem;
     transition: opacity var(--fade-in-duration) ease;
   }
   .content.visible {
@@ -187,7 +176,6 @@
     color: #f2cd93;
   }
 
-  /* --- Top-level dropdown sections (Experience, Projects, etc.) --- */
   .section-list {
     display: flex;
     flex-direction: column;
@@ -225,7 +213,6 @@
     color: rgba(244, 239, 230, 0.65);
   }
 
-  /* --- Categories within a section (Internships, Club Positions...) --- */
   .category-list {
     list-style: none;
     padding-left: 1.1rem;
@@ -253,7 +240,6 @@
     font-size: 1rem;
   }
 
-  /* --- Individual entries (a job, a project) --- */
   .entry-list {
     list-style: none;
     padding-left: 1.1rem;
@@ -390,11 +376,13 @@
 
   <div class="page" id="page">
     <div class="hero" id="hero">
-      <div class="stack">
-        <h1>Hello</h1>
-        <div class="line-wrap" id="wrap1">
-          <div class="line-inner">
-            <h2 class="subhead" id="line1"></h2>
+      <div class="hero-inner">
+        <div class="stack">
+          <h1 id="helloText">Hello</h1>
+          <div class="line-wrap" id="wrap1">
+            <div class="line-inner">
+              <h2 class="subhead" id="line1"></h2>
+            </div>
           </div>
         </div>
       </div>
@@ -406,7 +394,6 @@
 
       <div class="section-list">
 
-        <!-- Experience -->
         <details class="section" open>
           <summary>You can read about my experience here:</summary>
           <div class="section-body">
@@ -490,7 +477,6 @@
           </div>
         </details>
 
-        <!-- Projects -->
         <details class="section">
           <summary>You can check out some of my projects here:</summary>
           <div class="section-body">
@@ -530,7 +516,6 @@
           </div>
         </details>
 
-        <!-- Coursework -->
         <details class="section">
           <summary>You can check out my coursework here:</summary>
           <div class="section-body">
@@ -556,7 +541,6 @@
           </div>
         </details>
 
-        <!-- Professional links -->
         <details class="section">
           <summary>You can find some of my professional links here:</summary>
           <div class="section-body">
@@ -567,7 +551,6 @@
           </div>
         </details>
 
-        <!-- Personal links -->
         <details class="section">
           <summary>You can find some of my personal links here:</summary>
           <div class="section-body">
@@ -578,8 +561,6 @@
       </div>
     </div>
   </div>
-
-  <div class="fade-overlay" id="fadeOverlay"></div>
 
   <video
     class="performer"
@@ -599,42 +580,35 @@
       const performer = document.getElementById('performer');
       try {
         performer.currentTime = 0;
-      } catch (e) {
-      }
+      } catch (e) {}
       const playPromise = performer.play();
       if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => {
-        });
+        playPromise.catch(() => {});
       }
     })();
 
     const PULL_START_DELAY = 2370;
-
     const PULL_DURATION = 850;
 
     document.documentElement.style.setProperty('--pull-duration', PULL_DURATION + 'ms');
 
-    // --- Hero copy reveal knobs ---
-    const CONTENT_START_PAUSE = 350;  // pause after the pull settles, before "I'm Caden" begins
-    const EXPAND_DURATION = 450;      // ms, how long the line takes to open up its space
-    const LETTER_DURATION = 240;      // ms, how long each individual letter's fade+rise takes
-    const LETTER_SPEED = 16;          // ms between successive letters starting — lower = faster sweep
+    const CONTENT_START_PAUSE = 350;
+    const EXPAND_DURATION = 450;
+    const LETTER_DURATION = 240;
+    const LETTER_SPEED = 16;
 
     document.documentElement.style.setProperty('--expand-duration', EXPAND_DURATION + 'ms');
     document.documentElement.style.setProperty('--letter-duration', LETTER_DURATION + 'ms');
 
-    // --- Hero fade-out + content reveal knobs ---
-    const FADE_PAUSE = 600;          // pause after "I'm Caden" finishes, before the hero starts fading
-    const FADE_OUT_DURATION = 700;   // ms, how long the hero + curtain take to reach solid black
-    const HOLD_BLACK_DURATION = 200; // ms, beat of solid black between hero and content
-    const FADE_IN_DURATION = 700;    // ms, how long the content takes to fade in from black
+    const COLLAPSE_PAUSE = 500;
+    const COLLAPSE_DURATION = 750;
+    const CONTENT_PAUSE = 150;
+    const FADE_IN_DURATION = 550;
 
-    document.documentElement.style.setProperty('--fade-out-duration', FADE_OUT_DURATION + 'ms');
+    document.documentElement.style.setProperty('--collapse-duration', COLLAPSE_DURATION + 'ms');
     document.documentElement.style.setProperty('--fade-in-duration', FADE_IN_DURATION + 'ms');
 
     const LINE1_TEXT = "I'm Caden";
-    // This becomes the resume page's lede paragraph — it appears
-    // instantly alongside the rest of the content, with no animation.
     const CONTENT_LEDE_TEXT = "I'm a second year Computer Science and Economics student at Georgetown University interested in software engineering, product management, and business analytics. Outside of school, I love hiking and music production!";
 
     document.getElementById('contentLede').textContent = CONTENT_LEDE_TEXT;
@@ -675,6 +649,22 @@
       return Math.max(EXPAND_DURATION, (letterCount - 1) * LETTER_SPEED + LETTER_DURATION);
     }
 
+    function collapseStackToCorner() {
+      const hero = document.getElementById('hero');
+      const stack = document.querySelector('.stack');
+      const first = stack.getBoundingClientRect();
+      hero.classList.add('compact');
+      const last = stack.getBoundingClientRect();
+      const dx = first.left - last.left;
+      const dy = first.top - last.top;
+      const scale = first.width / last.width;
+      stack.style.transition = 'none';
+      stack.style.transform = 'translate(' + dx + 'px, ' + dy + 'px) scale(' + scale + ')';
+      void stack.offsetHeight;
+      stack.style.transition = '';
+      stack.style.transform = 'translate(0, 0) scale(0.9)';
+    }
+
     (function startSequence() {
       setTimeout(() => {
         document.getElementById('page').classList.add('revealed');
@@ -683,25 +673,14 @@
       const t1 = PULL_START_DELAY + PULL_DURATION + CONTENT_START_PAUSE;
       setTimeout(() => revealLine('wrap1', 'line1', LINE1_TEXT), t1);
 
-      const t2 = t1 + lineDuration(LINE1_TEXT) + FADE_PAUSE;
-      setTimeout(() => {
-        document.getElementById('hero').classList.add('fade-out');
-        document.getElementById('fadeOverlay').classList.add('visible');
-      }, t2);
+      const t2 = t1 + lineDuration(LINE1_TEXT) + COLLAPSE_PAUSE;
+      setTimeout(collapseStackToCorner, t2);
 
-      const t3 = t2 + FADE_OUT_DURATION + HOLD_BLACK_DURATION;
+      const t3 = t2 + COLLAPSE_DURATION + CONTENT_PAUSE;
       setTimeout(() => {
-        const hero = document.getElementById('hero');
         const content = document.getElementById('content');
-        const overlay = document.getElementById('fadeOverlay');
-
-        hero.classList.add('hidden');
         content.classList.add('visible');
-
         void content.offsetHeight;
-
-        overlay.classList.remove('visible');
-        overlay.classList.add('clearing');
         content.classList.add('shown');
       }, t3);
     })();
