@@ -575,8 +575,8 @@
     playsinline
     preload="auto"
   >
-    <source src="assets/performer.webm" type="video/webm">
     <source src="assets/performer.mp4" type="video/mp4">
+    <source src="assets/performer.webm" type="video/webm">
   </video>
 
   <script>
@@ -590,15 +590,22 @@
     // anything, using the standard Prerendering API where available and
     // falling back to the Page Visibility API everywhere else.
     function whenActivated(callback) {
+      let fired = false;
+      function fireOnce() {
+        if (fired) return;
+        fired = true;
+        callback();
+      }
+
       function waitForVisible() {
         if (document.visibilityState === 'visible') {
-          callback();
+          fireOnce();
           return;
         }
         document.addEventListener('visibilitychange', function onVis() {
           if (document.visibilityState === 'visible') {
             document.removeEventListener('visibilitychange', onVis);
-            callback();
+            fireOnce();
           }
         });
       }
@@ -608,16 +615,31 @@
       } else {
         waitForVisible();
       }
+
+      // Safety net: if visibility detection never fires the way we expect
+      // on some browser, don't leave the page permanently stuck — start
+      // anyway after a short wait.
+      setTimeout(fireOnce, 1500);
     }
 
     function restartVideo() {
       const performer = document.getElementById('performer');
+      performer.addEventListener('error', () => {
+        console.warn('Performer video failed to load:', performer.error);
+      });
+      Array.from(performer.querySelectorAll('source')).forEach((source) => {
+        source.addEventListener('error', () => {
+          console.warn('Video source failed:', source.src);
+        });
+      });
       try {
         performer.currentTime = 0;
       } catch (e) {}
       const playPromise = performer.play();
       if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => {});
+        playPromise.catch((err) => {
+          console.warn('Video play() was blocked or failed:', err);
+        });
       }
     }
 
