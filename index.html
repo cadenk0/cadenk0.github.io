@@ -527,8 +527,6 @@
                   <li>Computer Science II</li>
                   <li>Multivariable Calculus</li>
                   <li>Linear Algebra</li>
-                  <li>Macroeconomics</li>
-
                 </ul>
               </li>
               <li>
@@ -537,7 +535,6 @@
                   <li>Data Structures</li>
                   <li>Computer Organization</li>
                   <li>Advanced Programming in Java</li>
-                  <li>Microeconomics</li>
                 </ul>
               </li>
             </ul>
@@ -570,7 +567,6 @@
   <video
     class="performer"
     id="performer"
-    autoplay
     muted
     loop
     playsinline
@@ -581,7 +577,7 @@
   </video>
 
   <script>
-    (function restartVideo() {
+    function restartVideo() {
       const performer = document.getElementById('performer');
       try {
         performer.currentTime = 0;
@@ -590,9 +586,9 @@
       if (playPromise && typeof playPromise.catch === 'function') {
         playPromise.catch(() => {});
       }
-    })();
+    }
 
-    const PULL_START_DELAY = 2380;
+    const PULL_START_DELAY = 2370;
     const PULL_DURATION = 850;
 
     document.documentElement.style.setProperty('--pull-duration', PULL_DURATION + 'ms');
@@ -670,7 +666,7 @@
       stack.style.transform = 'translate(0, 0) scale(0.9)';
     }
 
-    (function startSequence() {
+    function startSequence() {
       setTimeout(() => {
         document.getElementById('page').classList.add('revealed');
       }, PULL_START_DELAY);
@@ -688,7 +684,23 @@
         void content.offsetHeight;
         content.classList.add('shown');
       }, t3);
-    })();
+    }
+
+    function init() {
+      restartVideo();
+      startSequence();
+    }
+
+    if (document.hidden) {
+      document.addEventListener('visibilitychange', function onVisible() {
+        if (!document.hidden) {
+          document.removeEventListener('visibilitychange', onVisible);
+          init();
+        }
+      });
+    } else {
+      init();
+    }
   </script>
 
 </body>
