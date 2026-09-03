@@ -516,7 +516,7 @@
                     <li>Led end-to-end development of a full-stack social platform, selected out of <strong>100+ submissions</strong> as Environmental Track winner of HoyaHacks 2026</li>
                     <li>Partnered with the Georgetown Office of Sustainability to deploy a production-grade, user-facing application serving <strong>7,000+ students</strong> campus-wide</li>
                   </ul>
-                  <img src="https://media.discordapp.net/attachments/898326558207533107/1544194493627113552/image.png?ex=6a979eb1&is=6a964d31&hm=9370342fb4093bbbb1cd298c8337b0a07724ebc0dad3306d95a2a5295d5e7db8&=&format=webp&quality=lossless&width=666&height=768" alt="Green Space screenshot">
+                  <img src="assets/greenspace.png" alt="Green Space screenshot">
                 </details>
               </li>
 
@@ -532,7 +532,7 @@
                     <li>Developed an ML pipeline based on <strong>12 biomechanical features</strong> using Random Forest, XGBoost, Logistic Regression, and K-Means clustering to identify gait anomalies</li>
                     <li>Implemented clinical summaries and alerts using the ChatGPT API to support care teams with real-time patient insights</li>
                   </ul>
-                  <img src="https://media.discordapp.net/attachments/855554009913098274/1492668030046699550/image.png?ex=6a975fee&is=6a960e6e&hm=defcfaa69eb68ff69a641a0b2ad07b5b7525075a1a87040c3a6db012183663f9&=&format=webp&quality=lossless&width=1024&height=719" alt="PocketPal screenshot">
+                  <img src="assets/pocketpal.png" alt="PocketPal screenshot">
                 </details>
               </li>
             </ul>
@@ -770,9 +770,6 @@
               runIntroSequence();
             })
             .catch((err) => {
-              // Autoplay was blocked (e.g. iOS Low Power Mode). A real
-              // tap always satisfies autoplay policies, so wait for one
-              // instead of leaving the page permanently stuck.
               console.warn('Video play() was blocked or failed:', err);
               const tap = document.getElementById('tapToBegin');
               tap.classList.add('show');
