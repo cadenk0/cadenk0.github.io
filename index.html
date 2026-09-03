@@ -527,6 +527,8 @@
                   <li>Computer Science II</li>
                   <li>Multivariable Calculus</li>
                   <li>Linear Algebra</li>
+                  <li>Macroeconomics</li>
+
                 </ul>
               </li>
               <li>
@@ -535,6 +537,7 @@
                   <li>Data Structures</li>
                   <li>Computer Organization</li>
                   <li>Advanced Programming in Java</li>
+                  <li>Microeconomics</li>
                 </ul>
               </li>
             </ul>
@@ -577,6 +580,36 @@
   </video>
 
   <script>
+    // Mobile Chrome (and some desktop versions) can prerender a page you're
+    // typing in the address bar — loading it, and running its JS, in a
+    // hidden background tab before you've even hit enter. If we start our
+    // video and timers on page `load`, they've already been running for
+    // however long you spent typing, so by the time the tab becomes
+    // visible everything is out of sync. `whenActivated` waits for the
+    // page to actually be the one the person is looking at before doing
+    // anything, using the standard Prerendering API where available and
+    // falling back to the Page Visibility API everywhere else.
+    function whenActivated(callback) {
+      function waitForVisible() {
+        if (document.visibilityState === 'visible') {
+          callback();
+          return;
+        }
+        document.addEventListener('visibilitychange', function onVis() {
+          if (document.visibilityState === 'visible') {
+            document.removeEventListener('visibilitychange', onVis);
+            callback();
+          }
+        });
+      }
+
+      if ('prerendering' in document && document.prerendering) {
+        document.addEventListener('prerenderingchange', waitForVisible, { once: true });
+      } else {
+        waitForVisible();
+      }
+    }
+
     function restartVideo() {
       const performer = document.getElementById('performer');
       try {
@@ -588,7 +621,7 @@
       }
     }
 
-    const PULL_START_DELAY = 2370;
+    const PULL_START_DELAY = 2380;
     const PULL_DURATION = 850;
 
     document.documentElement.style.setProperty('--pull-duration', PULL_DURATION + 'ms');
@@ -666,41 +699,29 @@
       stack.style.transform = 'translate(0, 0) scale(0.9)';
     }
 
-    function startSequence() {
-      setTimeout(() => {
-        document.getElementById('page').classList.add('revealed');
-      }, PULL_START_DELAY);
+    (function startSequence() {
+      whenActivated(() => {
+        restartVideo();
 
-      const t1 = PULL_START_DELAY + PULL_DURATION + CONTENT_START_PAUSE;
-      setTimeout(() => revealLine('wrap1', 'line1', LINE1_TEXT), t1);
+        setTimeout(() => {
+          document.getElementById('page').classList.add('revealed');
+        }, PULL_START_DELAY);
 
-      const t2 = t1 + lineDuration(LINE1_TEXT) + COLLAPSE_PAUSE;
-      setTimeout(collapseStackToCorner, t2);
+        const t1 = PULL_START_DELAY + PULL_DURATION + CONTENT_START_PAUSE;
+        setTimeout(() => revealLine('wrap1', 'line1', LINE1_TEXT), t1);
 
-      const t3 = t2 + COLLAPSE_DURATION + CONTENT_PAUSE;
-      setTimeout(() => {
-        const content = document.getElementById('content');
-        content.classList.add('visible');
-        void content.offsetHeight;
-        content.classList.add('shown');
-      }, t3);
-    }
+        const t2 = t1 + lineDuration(LINE1_TEXT) + COLLAPSE_PAUSE;
+        setTimeout(collapseStackToCorner, t2);
 
-    function init() {
-      restartVideo();
-      startSequence();
-    }
-
-    if (document.hidden) {
-      document.addEventListener('visibilitychange', function onVisible() {
-        if (!document.hidden) {
-          document.removeEventListener('visibilitychange', onVisible);
-          init();
-        }
+        const t3 = t2 + COLLAPSE_DURATION + CONTENT_PAUSE;
+        setTimeout(() => {
+          const content = document.getElementById('content');
+          content.classList.add('visible');
+          void content.offsetHeight;
+          content.classList.add('shown');
+        }, t3);
       });
-    } else {
-      init();
-    }
+    })();
   </script>
 
 </body>
