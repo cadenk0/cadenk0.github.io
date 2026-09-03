@@ -614,52 +614,35 @@
     // falling back to the Page Visibility API everywhere else.
     function whenActivated(callback) {
       let fired = false;
-
-      function cleanup() {
-        document.removeEventListener('visibilitychange', check);
-        window.removeEventListener('focus', check);
-        window.removeEventListener('pageshow', check);
-      }
-
       function fireOnce() {
         if (fired) return;
         fired = true;
-        cleanup();
         callback();
       }
 
-      // Chrome's Prerendering API only covers Chrome's own background-tab
-      // preloading. Safari's similar "Preload Top Hit" feature (which
-      // silently loads the address bar's top suggestion while you type)
-      // exposes no equivalent API at all — so alongside visibility, we
-      // also require the page to actually have focus. While you're still
-      // typing in the address bar, the content itself doesn't have focus
-      // yet; it only gains focus once real navigation is committed.
-      function check() {
-        if (document.visibilityState === 'visible' && document.hasFocus()) {
+      function waitForVisible() {
+        if (document.visibilityState === 'visible') {
           fireOnce();
+          return;
         }
-      }
-
-      function begin() {
-        check();
-        if (!fired) {
-          document.addEventListener('visibilitychange', check);
-          window.addEventListener('focus', check);
-          window.addEventListener('pageshow', check);
-        }
+        document.addEventListener('visibilitychange', function onVis() {
+          if (document.visibilityState === 'visible') {
+            document.removeEventListener('visibilitychange', onVis);
+            fireOnce();
+          }
+        });
       }
 
       if ('prerendering' in document && document.prerendering) {
-        document.addEventListener('prerenderingchange', begin, { once: true });
+        document.addEventListener('prerenderingchange', waitForVisible, { once: true });
       } else {
-        begin();
+        waitForVisible();
       }
 
-      // Safety net: if neither signal ever lines up the way we expect on
-      // some browser, don't leave the page permanently stuck — start
+      // Safety net: if visibility detection never fires the way we expect
+      // on some browser, don't leave the page permanently stuck — start
       // anyway after a short wait.
-      setTimeout(fireOnce, 3000);
+      setTimeout(fireOnce, 1500);
     }
 
     function restartVideo() {
